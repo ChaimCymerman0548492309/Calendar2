@@ -33,8 +33,8 @@ function App() {
       {/* <CheckboxesTags2></CheckboxesTags2> */}
       {/* <AIFace/> */}
       {/* <Bee/> */}
-      {/* <Calendar/> */}
-      <AIFace2 />
+      <Calendar/>
+      {/* <AIFace2 /> */}
       {/* <ChaimCymermanWebsite /> */}
     </div>
   );

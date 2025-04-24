@@ -100,8 +100,9 @@ const colorOptions = [
 ];
 
 function Calendar() {
-  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: dark)");
+  const prefersDarkMode = useMediaQuery("(prefers-color-scheme: light)");
   const [mode, setMode] = useState<PaletteMode>(
+    // prefersDarkMode ? "light" : "dark"
     prefersDarkMode ? "dark" : "light"
   );
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
