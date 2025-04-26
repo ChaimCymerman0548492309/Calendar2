@@ -12,7 +12,7 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mediapipe/face_mesh": "^0.4.1633559619",
-    "@mui/icons-material": "^6.4.11",
+    "@mui/icons-material": "^7.0.0",
     "@mui/material": "^7.0.2",
     "@react-three/drei": "^9.120.7",
     "@react-three/fiber": "^8.17.12",
