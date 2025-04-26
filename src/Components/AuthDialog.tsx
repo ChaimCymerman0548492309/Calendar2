@@ -53,7 +53,7 @@ const AuthDialog: React.FC<AuthDialogProps> = ({
         )}
         <TextField
           autoFocus
-          // margin="dense"
+          size="small"
           label="Username"
           type="text"
           fullWidth
@@ -62,7 +62,7 @@ const AuthDialog: React.FC<AuthDialogProps> = ({
           onChange={(e) => setUsername(e.target.value)}
         />
         <TextField
-          // margin="dense"
+          size="small"
           label="Password"
           type="password"
           fullWidth

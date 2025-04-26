@@ -254,86 +254,110 @@ export default function CalenterWtoutALib() {
 
   return (
     <div className="w-full max-w-screen-lg mx-auto p-4">
-    
-<Box sx={{ width: '100%', maxWidth: '1200px', margin: 'auto', padding: 4 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button
-            onClick={() => setView('day')}
-            variant={view === 'day' ? 'contained' : 'outlined'}
-            color="primary"
-          >
-            Day
-          </Button>
-          <Button
-            onClick={() => setView('week')}
-            variant={view === 'week' ? 'contained' : 'outlined'}
-            color="primary"
-          >
-            Week
-          </Button>
-          <Button
-            onClick={() => setView('month')}
-            variant={view === 'month' ? 'contained' : 'outlined'}
-            color="primary"
-          >
-            Month
-          </Button>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button onClick={goToBack} variant="outlined">
-            Back
-          </Button>
-          <Button onClick={goToNext} variant="outlined">
-            Next
-          </Button>
-          <Button onClick={openAddEventPopup} variant="contained" color="success">
-            Add Event
-          </Button>
-        </Box>
-      </Box>
-
-      <Box sx={{ border: '1px solid #ddd', borderRadius: 1, backgroundColor: 'white' }}>
-        {view === 'month' && <MonthView />}
-        {view === 'week' && <WeekView />}
-        {view === 'day' && <DayView />}
-      </Box>
-
-      <Dialog open={isAddEventPopupOpen} onClose={closeAddEventPopup}>
-        <DialogTitle>Add New Event</DialogTitle>
-        <DialogContent>
-          <TextField
-            label="Event Title"
-            value={newEvent.title}
-            onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
-            fullWidth
-            // margin="normal"
-          />
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <TextField
-              label="Start Date and Time"
-              type="datetime-local"
-              value={newEvent.start.toISOString().slice(0, 16)}
-              onChange={(e) => setNewEvent({ ...newEvent, start: new Date(e.target.value) })}
-              fullWidth
-            />
-            <TextField
-              label="End Date and Time"
-              type="datetime-local"
-              value={newEvent.end.toISOString().slice(0, 16)}
-              onChange={(e) => setNewEvent({ ...newEvent, end: new Date(e.target.value) })}
-              fullWidth
-            />
+      <Box
+        sx={{ width: "100%", maxWidth: "1200px", margin: "auto", padding: 4 }}
+      >
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 4,
+          }}
+        >
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              onClick={() => setView("day")}
+              variant={view === "day" ? "contained" : "outlined"}
+              color="primary"
+            >
+              Day
+            </Button>
+            <Button
+              onClick={() => setView("week")}
+              variant={view === "week" ? "contained" : "outlined"}
+              color="primary"
+            >
+              Week
+            </Button>
+            <Button
+              onClick={() => setView("month")}
+              variant={view === "month" ? "contained" : "outlined"}
+              color="primary"
+            >
+              Month
+            </Button>
           </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeAddEventPopup}>Cancel</Button>
-          <Button onClick={handleAddEvent} color="primary">
-            Add Event
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button onClick={goToBack} variant="outlined">
+              Back
+            </Button>
+            <Button onClick={goToNext} variant="outlined">
+              Next
+            </Button>
+            <Button
+              onClick={openAddEventPopup}
+              variant="contained"
+              color="success"
+            >
+              Add Event
+            </Button>
+          </Box>
+        </Box>
+
+        <Box
+          sx={{
+            border: "1px solid #ddd",
+            borderRadius: 1,
+            backgroundColor: "white",
+          }}
+        >
+          {view === "month" && <MonthView />}
+          {view === "week" && <WeekView />}
+          {view === "day" && <DayView />}
+        </Box>
+
+        <Dialog open={isAddEventPopupOpen} onClose={closeAddEventPopup}>
+          <DialogTitle>Add New Event</DialogTitle>
+          <DialogContent>
+            <TextField
+              label="Event Title"
+              value={newEvent.title}
+              onChange={(e) =>
+                setNewEvent({ ...newEvent, title: e.target.value })
+              }
+              fullWidth
+              sx={{ mt: 2, mb: 1 }}
+            />
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                label="Start Date and Time"
+                type="datetime-local"
+                value={newEvent.start.toISOString().slice(0, 16)}
+                onChange={(e) =>
+                  setNewEvent({ ...newEvent, start: new Date(e.target.value) })
+                }
+                fullWidth
+              />
+              <TextField
+                label="End Date and Time"
+                type="datetime-local"
+                value={newEvent.end.toISOString().slice(0, 16)}
+                onChange={(e) =>
+                  setNewEvent({ ...newEvent, end: new Date(e.target.value) })
+                }
+                fullWidth
+              />
+            </Box>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeAddEventPopup}>Cancel</Button>
+            <Button onClick={handleAddEvent} color="primary">
+              Add Event
+            </Button>
+          </DialogActions>
+        </Dialog>
+      </Box>
       {isAddEventPopupOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
           <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
@@ -341,7 +365,9 @@ export default function CalenterWtoutALib() {
             <input
               type="text"
               value={newEvent.title}
-              onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+              onChange={(e) =>
+                setNewEvent({ ...newEvent, title: e.target.value })
+              }
               className="w-full p-3 mb-4 border border-gray-300 rounded-lg"
               placeholder="Event Title"
             />
@@ -349,13 +375,17 @@ export default function CalenterWtoutALib() {
               <input
                 type="datetime-local"
                 value={newEvent.start.toISOString().slice(0, 16)}
-                onChange={(e) => setNewEvent({ ...newEvent, start: new Date(e.target.value) })}
+                onChange={(e) =>
+                  setNewEvent({ ...newEvent, start: new Date(e.target.value) })
+                }
                 className="w-1/2 p-3 border border-gray-300 rounded-lg"
               />
               <input
                 type="datetime-local"
                 value={newEvent.end.toISOString().slice(0, 16)}
-                onChange={(e) => setNewEvent({ ...newEvent, end: new Date(e.target.value) })}
+                onChange={(e) =>
+                  setNewEvent({ ...newEvent, end: new Date(e.target.value) })
+                }
                 className="w-1/2 p-3 border border-gray-300 rounded-lg"
               />
             </div>
