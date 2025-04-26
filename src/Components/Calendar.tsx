@@ -1,4 +1,11 @@
 import React, { useState } from "react";
+// הוסף מתחת ליתר ה-imports הקיימים
+import { useEffect } from 'react';
+import { register, login, getCurrentUser } from './auth';
+import { getEvents, createEvent, updateEvent, deleteEvent } from './events';
+import AuthDialog from './AuthDialog';
+import { ExitToApp, AccountCircle } from '@mui/icons-material'; // להוספת האייקונים
+import Bee from "./Bee/Bee"; // הוסף את קומפוננטת האנימציה
 import {
   Calendar as BigCalendar,
   momentLocalizer,
@@ -44,7 +51,10 @@ import {
 } from "@mui/icons-material";
 import "./Ca.css";
 import  DragDropContext  from "react-big-calendar/lib/addons/dragAndDrop";
-
+import { useTranslation } from 'react-i18next';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import './i18n'; // ניצור קובץ זה בהמשך
 
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent, object>(BigCalendar);
 
@@ -100,6 +110,11 @@ const colorOptions = [
 ];
 
 function Calendar() {
+  // הוסף מתחת ל-state הקיים
+  
+  const [authOpen, setAuthOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [loading, setLoading] = useState(true); // לטובת האנימציה
   const prefersDarkMode = useMediaQuery("(prefers-color-scheme: light)");
   const [mode, setMode] = useState<PaletteMode>(
     // prefersDarkMode ? "light" : "dark"
@@ -115,7 +130,69 @@ function Calendar() {
     end: new Date(new Date().setHours(1, 0, 0, 0)),
     color: colorOptions[0],
   });
+  const { t } = useTranslation();
+  const [language, setLanguage] = useState<"en" | "he">("en");
 
+  const toggleLanguage = () => {
+    const newLang = language === "en" ? "he" : "en";
+    setLanguage(newLang);
+    i18n.changeLanguage(newLang);
+    document.dir = newLang === "he" ? "rtl" : "ltr";
+  };
+  // הוסף מתחת ל-state
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const response = await getCurrentUser();
+          setUser(response.data);
+          const eventsResponse = await getEvents();
+          setEvents(eventsResponse.data);
+        } else {
+          setAuthOpen(true);
+        }
+      } catch (error) {
+        localStorage.removeItem("token");
+        setAuthOpen(true);
+      } finally {
+        setLoading(false); // סיום טעינה - להסתיר אנימציה
+      }
+    };
+
+    fetchUser();
+  }, []);
+  // הוסף מתחת ל-useEffect
+  const handleLogin = async (username: string, password: string) => {
+    setLoading(true); // הצג אנימציה בזמן טעינה
+    try {
+      const response = await login(username, password);
+      localStorage.setItem("token", response.data.token);
+      setUser(response.data.user);
+      const eventsResponse = await getEvents();
+      setEvents(eventsResponse.data);
+    } finally {
+      setLoading(false); // הסתר אנימציה
+    }
+  };
+
+  const handleRegister = async (username: string, password: string) => {
+    setLoading(true);
+    try {
+      const response = await register(username, password);
+      localStorage.setItem("token", response.data.token);
+      setUser(response.data.user);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    setUser(null);
+    setEvents([]);
+    setAuthOpen(true);
+  };
   const theme = React.useMemo(
     () =>
       createTheme({
@@ -196,25 +273,42 @@ function Calendar() {
     setEditingIndex(null);
   };
 
-  const handleSaveEvent = () => {
+  // החלף את הפונקציות הקיימות ב:
+  const handleSaveEvent = async () => {
     if (newEvent.title && newEvent.start && newEvent.end) {
-      if (editingIndex !== null) {
-        const updated = [...events];
-        updated[editingIndex] = newEvent as CalendarEvent;
-        setEvents(updated);
-      } else {
-        const eventToAdd = {
-          ...newEvent,
-          id: events.length > 0 ? Math.max(...events.map((e) => e.id)) + 1 : 1,
-        } as CalendarEvent;
-        setEvents([...events, eventToAdd]);
+      setLoading(true);
+      try {
+        if (editingIndex !== null) {
+          const updatedEvent = await updateEvent(
+            newEvent.id!,
+            newEvent as CalendarEvent
+          );
+          const updated = [...events];
+          updated[editingIndex] = updatedEvent.data;
+          setEvents(updated);
+        } else {
+          const eventToAdd = await createEvent(newEvent as CalendarEvent);
+          setEvents([...events, eventToAdd.data]);
+        }
+        handleDialogClose();
+      } catch (error) {
+        console.error("Error saving event:", error);
+      } finally {
+        setLoading(false);
       }
-      handleDialogClose();
     }
   };
 
-  const handleDelete = (id: number) => {
-    setEvents(events.filter((event) => event.id !== id));
+  const handleDelete = async (id: number) => {
+    setLoading(true);
+    try {
+      await deleteEvent(id);
+      setEvents(events.filter((event) => event.id !== id));
+    } catch (error) {
+      console.error("Error deleting event:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleEdit = (index: number) => {
@@ -239,6 +333,7 @@ function Calendar() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      {loading && <Bee />}
       <Box
         sx={{
           display: "flex",
@@ -250,16 +345,24 @@ function Calendar() {
         {/* Header */}
         <AppBar position="static" elevation={0}>
           <Toolbar>
+            <IconButton
+              color="inherit"
+              onClick={toggleLanguage}
+              aria-label={t("Toggle language")}
+            >
+              {language !== "en" ? "עב" : "En"}
+            </IconButton>
             <CalendarToday sx={{ mr: 2 }} />
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              Modern Calendar App
+              {/* Modern Calendar App */}
+              {t("Modern Calendar App")}
             </Typography>
             <IconButton
               color="inherit"
               onClick={toggleColorMode}
               aria-label="toggle theme"
             >
-              {mode === "dark" ? <Brightness7 /> : <Brightness4 />}
+              {mode !== "dark" ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
             <IconButton
               color="inherit"
@@ -270,6 +373,16 @@ function Calendar() {
             >
               <GitHub />
             </IconButton>
+            <IconButton
+              color="inherit"
+              onClick={user ? handleLogout : () => setAuthOpen(true)}
+              aria-label={user ? "Logout" : "Login"}
+            >
+              {user ? <ExitToApp /> : <AccountCircle />}
+            </IconButton>
+            <Typography variant="subtitle2" sx={{ ml: 1 }}>
+              {user ? user.username : "Guest"}
+            </Typography>
           </Toolbar>
         </AppBar>
 
@@ -297,7 +410,7 @@ function Calendar() {
                 onClick={handleDialogOpen}
                 sx={{ textTransform: "none" }}
               >
-                New Event
+                {t("New Event")}
               </Button>
             </Box>
 
@@ -392,7 +505,7 @@ function Calendar() {
                   views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
                   defaultView={Views.MONTH}
                   components={{
-                    event: ({ event  } ) => (
+                    event: ({ event }) => (
                       <div>
                         <strong>{event.title}</strong>
                         {!event.allDay && (
@@ -424,7 +537,7 @@ function Calendar() {
                 <TextField
                   fullWidth
                   label="Event Title"
-                  margin="normal"
+                  sx={{ mt: 2, mb: 1 }}
                   variant="outlined"
                   value={newEvent.title}
                   onChange={(e) =>
@@ -436,7 +549,7 @@ function Calendar() {
                     fullWidth
                     type="datetime-local"
                     label="Start"
-                    margin="normal"
+                    sx={{ mt: 2, mb: 1 }}
                     variant="outlined"
                     InputLabelProps={{ shrink: true }}
                     value={moment(newEvent.start).format("YYYY-MM-DDTHH:mm")}
@@ -451,7 +564,7 @@ function Calendar() {
                     fullWidth
                     type="datetime-local"
                     label="End"
-                    margin="normal"
+                    sx={{ mt: 2, mb: 1 }}
                     variant="outlined"
                     InputLabelProps={{ shrink: true }}
                     value={moment(newEvent.end).format("YYYY-MM-DDTHH:mm")}
@@ -529,7 +642,8 @@ function Calendar() {
               }}
             >
               <Typography variant="body2" color="text.secondary">
-                © {new Date().getFullYear()} Modern Calendar App
+                © {new Date().getFullYear()}
+                {t("Modern Calendar App")}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 Created with React, Material-UI, and React Big Calendar
@@ -548,6 +662,12 @@ function Calendar() {
           </Container>
         </Box>
       </Box>
+      <AuthDialog
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        onLogin={handleLogin}
+        onRegister={handleRegister}
+      />
     </ThemeProvider>
   );
 }

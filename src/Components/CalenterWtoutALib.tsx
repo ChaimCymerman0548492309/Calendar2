@@ -307,7 +307,7 @@ export default function CalenterWtoutALib() {
             value={newEvent.title}
             onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
             fullWidth
-            margin="normal"
+            // margin="normal"
           />
           <Box sx={{ display: 'flex', gap: 2 }}>
             <TextField
