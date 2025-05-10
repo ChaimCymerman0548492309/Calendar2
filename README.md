@@ -234,12 +234,21 @@ yarn build
 | `/events/:id` | PUT | Update event | `{ title, start, end, color }` |
 | `/events/:id` | DELETE | Delete event | - |
 
+
+### Employees API
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/employees` | GET | Get all employees |
+| `/events/:id/assign` | PATCH | Assign employee to event |
+
 ### Authentication
 | Endpoint | Method | Description | Parameters |
 |----------|--------|-------------|------------|
 | `/auth/register` | POST | Register new user | `{ username, password }` |
 | `/auth/login` | POST | User login | `{ username, password }` |
 | `/auth/me` | GET | Current user details | - |
+
+
 
 ## 🗃️ Data Structure
 
@@ -264,6 +273,8 @@ yarn build
 | `createdAt` | Date | Creation date |
 
 ## 📚 Technical Documentation
+
+
 
 ### Component Structure
 ```

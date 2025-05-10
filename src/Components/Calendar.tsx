@@ -55,6 +55,12 @@ import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import "./i18n"; // ניצור קובץ זה בהמשך
+import { Employee, EmployeeList } from "./EmployeeList";
+import { Droppable, DropResult } from "react-beautiful-dnd";
+import { DragDropContext as Dnd } from 'react-beautiful-dnd';
+import { EventComponent } from "./EventComponent";
+import { handleEmployeeDrop } from "./dragUtils";
+import axios from "axios";
 
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent, object>(BigCalendar);
 
@@ -62,7 +68,7 @@ const localizer = momentLocalizer(moment);
 
 // const DragAndDropCalendar = withDragAndDrop(BigCalendar);
 
-interface CalendarEvent {
+export interface CalendarEvent {
   _id: number;
   title: string;
   start: Date;
@@ -130,6 +136,22 @@ function Calendar() {
     end: new Date(new Date().setHours(1, 0, 0, 0)),
     color: colorOptions[0],
   });
+  const [employees, setEmployees] = useState<Employee[]>([
+    {
+      _id: "1",
+      name: "דניאל כהן",
+      position: "מפתח Full Stack",
+      color: "#4e79a7",
+    },
+    {
+      _id: "2",
+      name: "מיכל לוי",
+      position: "מעצבת UX/UI",
+      color: "#e15759",
+    },
+    // ... עובדים נוספים
+  ]);
+
   const { t } = useTranslation();
   const [language, setLanguage] = useState<"en" | "he">("en");
 
@@ -236,7 +258,10 @@ function Calendar() {
     setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
   };
 
-  const onEventDrop = async ({
+
+
+
+const onEventDrop = async ({
     event,
     start,
     end,
@@ -372,349 +397,406 @@ function Calendar() {
     };
   };
 
+const onEmployeeDrop = (result: DropResult) => {
+  handleEmployeeDrop(result, events, setEvents, updateEventAssignment);
+};
+
+const updateEventAssignment = async (eventId: string, employeeId: string) => {
+  try {
+    await axios.patch(`/events/${eventId}/assign`, { employeeId });
+  } catch (error) {
+    console.error("Failed to update event assignment", error);
+  }
+};
+
   return (
     <ThemeProvider theme={theme}>
+      <Dnd onDragEnd={onEmployeeDrop}>
       <CssBaseline />
       {loading && <Bee />}
       <Box
-        sx={{
-          display: "flex",
-          flexDirection: "column",
-          minHeight: "100vh",
-          bgcolor: "background.default",
-        }}
+        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
       >
-        {/* Header */}
-        <AppBar position="static" elevation={0}>
-          <Toolbar>
-            <IconButton
-              color="inherit"
-              onClick={toggleLanguage}
-              aria-label={t("Toggle language")}
-            >
-              {language !== "en" ? "עב" : "En"}
-            </IconButton>
-            <CalendarToday sx={{ mr: 2 }} />
-            <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              {/* Modern Calendar App */}
-              {t("Modern Calendar App")}
-            </Typography>
-            <IconButton
-              color="inherit"
-              onClick={toggleColorMode}
-              aria-label="toggle theme"
-            >
-              {mode !== "dark" ? <Brightness7 /> : <Brightness4 />}
-            </IconButton>
-            <IconButton
-              color="inherit"
-              href="https://github.com/yourusername/calendar-app"
-              target="_blank"
-              rel="noopener"
-              aria-label="GitHub"
-            >
-              <GitHub />
-            </IconButton>
-            <IconButton
-              color="inherit"
-              onClick={user ? handleLogout : () => setAuthOpen(true)}
-              aria-label={user ? "Logout" : "Login"}
-            >
-              {user ? <ExitToApp /> : <AccountCircle />}
-            </IconButton>
-            <Typography variant="subtitle2" sx={{ ml: 1 }}>
-              {user ? user.username : "Guest"}
-            </Typography>
-          </Toolbar>
-        </AppBar>
-
-        {/* Main Content */}
-        <Box component="main" sx={{ flex: 1, p: 3 }}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <Box
-              sx={{
-                mb: 3,
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-                My Schedule
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={handleDialogOpen}
-                sx={{ textTransform: "none" }}
-              >
-                {t("New Event")}
-              </Button>
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: { xs: "column", md: "row" },
-                gap: 3,
-              }}
-            >
-              {/* Events List */}
-              <Paper
-                elevation={3}
-                sx={{
-                  p: 2,
-                  width: { xs: "100%", md: 300 },
-                  maxHeight: 500,
-                  overflow: "auto",
-                }}
-              >
-                <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
-                  Upcoming Events
-                </Typography>
-                <Divider sx={{ mb: 2 }} />
-                {events.length === 0 ? (
-                  <Typography variant="body2" color="text.secondary">
-                    No events scheduled
-                  </Typography>
-                ) : (
-                  events
-                    .sort(
-                      (a, b) =>
-                        new Date(a.start).getTime() -
-                        new Date(b.start).getTime()
-                    )
-                    .map((event, idx) => (
-                      <Paper
-                        key={idx}
-                        elevation={1}
-                        sx={{
-                          p: 1.5,
-                          mb: 1.5,
-                          bgcolor: event.color || "primary.main",
-                          color: "#fff",
-                          position: "relative",
-                        }}
-                      >
-                        <Typography
-                          variant="subtitle2"
-                          sx={{ fontWeight: 600 }}
-                        >
-                          {event.title}
-                        </Typography>
-                        <Typography variant="caption">
-                          {moment(event.start).format("MMM D, YYYY")}
-                          {!event.allDay &&
-                            ` • ${moment(event.start).format(
-                              "h:mm A"
-                            )} - ${moment(event.end).format("h:mm A")}`}
-                        </Typography>
-                        <Box sx={{ position: "absolute", top: 4, right: 4 }}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleEdit(idx)}
-                            sx={{ color: "#fff" }}
-                          >
-                            <Edit fontSize="small" />
-                          </IconButton>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDelete(event._id)}
-                            sx={{ color: "#fff" }}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </Paper>
-                    ))
-                )}
-              </Paper>
-
-              {/* Calendar */}
-              <Box sx={{ flex: 1 }}>
-                <DragAndDropCalendar
-                  localizer={localizer}
-                  events={events}
-                  onEventDrop={onEventDrop}
-                  onEventResize={onEventResize}
-                  resizable
-                  showAllEvents
-                  showMultiDayTimes
-                  // onDrillDown={() => setCurrentView(Views.DAY)}
-                  style={{ height: 600 }}
-                  onView={handleViewChange}
-                  className={`rounded-lg shadow-sm ${currentView}`}
-                  eventPropGetter={eventStyleGetter}
-                  // views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
-                  defaultView={Views.MONTH}
-                  components={{
-                    event: ({ event }) => (
-                      <div>
-                        <strong>{event.title}</strong>
-                        {!event.allDay && (
-                          <div>
-                            {moment(event.start).format("h:mm A")} -{" "}
-                            {moment(event.end).format("h:mm A")}
-                          </div>
-                        )}
-                      </div>
-                    ),
-                  }}
-                />
-              </Box>
-            </Box>
-          </motion.div>
-
-          {/* Event Dialog */}
-          <Dialog
-            open={openDialog}
-            onClose={handleDialogClose}
-            fullWidth
-            maxWidth="sm"
-          >
-            <DialogTitle>
-              {editingIndex !== null ? "Edit Event" : "Create New Event"}
-            </DialogTitle>
-            <DialogContent>
-              <Box sx={{ mt: 2 }}>
-                <TextField
-                  fullWidth
-                  label="Event Title"
-                  sx={{ mt: 2, mb: 1 }}
-                  variant="outlined"
-                  value={newEvent.title}
-                  onChange={(e) =>
-                    setNewEvent({ ...newEvent, title: e.target.value })
-                  }
-                />
-                <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-                  <TextField
-                    fullWidth
-                    type="datetime-local"
-                    label="Start"
-                    sx={{ mt: 2, mb: 1 }}
-                    variant="outlined"
-                    InputLabelProps={{ shrink: true }}
-                    value={moment(newEvent.start).format("YYYY-MM-DDTHH:mm")}
-                    onChange={(e) =>
-                      setNewEvent({
-                        ...newEvent,
-                        start: new Date(e.target.value),
-                      })
-                    }
-                  />
-                  <TextField
-                    fullWidth
-                    type="datetime-local"
-                    label="End"
-                    sx={{ mt: 2, mb: 1 }}
-                    variant="outlined"
-                    InputLabelProps={{ shrink: true }}
-                    value={moment(newEvent.end).format("YYYY-MM-DDTHH:mm")}
-                    onChange={(e) =>
-                      setNewEvent({
-                        ...newEvent,
-                        end: new Date(e.target.value),
-                      })
-                    }
-                  />
-                </Box>
-                <Box sx={{ mt: 2 }}>
-                  <Typography variant="subtitle1" sx={{ mb: 1 }}>
-                    Event Color
-                  </Typography>
-                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                    {colorOptions.map((color) => (
-                      <Box
-                        key={color}
-                        onClick={() => setNewEvent({ ...newEvent, color })}
-                        sx={{
-                          width: 32,
-                          height: 32,
-                          bgcolor: color,
-                          borderRadius: "50%",
-                          cursor: "pointer",
-                          border:
-                            newEvent.color === color
-                              ? `3px solid ${
-                                  theme.palette.mode === "dark"
-                                    ? "#fff"
-                                    : "#000"
-                                }`
-                              : "none",
-                          "&:hover": {
-                            transform: "scale(1.1)",
-                          },
-                        }}
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              </Box>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={handleDialogClose}>Cancel</Button>
-              <Button
-                variant="contained"
-                onClick={handleSaveEvent}
-                disabled={!newEvent.title}
-              >
-                {editingIndex !== null ? "Save Changes" : "Create Event"}
-              </Button>
-            </DialogActions>
-          </Dialog>
-        </Box>
-
-        {/* Footer */}
         <Box
-          component="footer"
           sx={{
-            py: 3,
-            px: 2,
-            mt: "auto",
-            bgcolor: mode === "dark" ? "background.paper" : "grey.100",
+            display: "flex",
+            flexDirection: "column",
+            minHeight: "100vh",
+            bgcolor: "background.default",
           }}
         >
-          <Container maxWidth="lg">
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="body2" color="text.secondary">
-                © {new Date().getFullYear()}
+          {/* Header */}
+          <AppBar position="static" elevation={0}>
+            <Toolbar>
+              <IconButton
+                color="inherit"
+                onClick={toggleLanguage}
+                aria-label={t("Toggle language")}
+              >
+                {language !== "en" ? "עב" : "En"}
+              </IconButton>
+              <CalendarToday sx={{ mr: 2 }} />
+              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+                {/* Modern Calendar App */}
                 {t("Modern Calendar App")}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Created with React, Material-UI, and React Big Calendar
+              <IconButton
+                color="inherit"
+                onClick={toggleColorMode}
+                aria-label="toggle theme"
+              >
+                {mode !== "dark" ? <Brightness7 /> : <Brightness4 />}
+              </IconButton>
+              <IconButton
+                color="inherit"
+                href="https://github.com/yourusername/calendar-app"
+                target="_blank"
+                rel="noopener"
+                aria-label="GitHub"
+              >
+                <GitHub />
+              </IconButton>
+              <IconButton
+                color="inherit"
+                onClick={user ? handleLogout : () => setAuthOpen(true)}
+                aria-label={user ? "Logout" : "Login"}
+              >
+                {user ? <ExitToApp /> : <AccountCircle />}
+              </IconButton>
+              <Typography variant="subtitle2" sx={{ ml: 1 }}>
+                {user ? user.username : "Guest"}
               </Typography>
-              <Box sx={{ display: "flex", gap: 1 }}>
-                <IconButton
-                  size="small"
-                  href="https://github.com/yourusername"
-                  target="_blank"
-                  rel="noopener"
+            </Toolbar>
+          </AppBar>
+
+          {/* Main Content */}
+          <Box component="main" sx={{ flex: 1, p: 3 }}>
+            {/* <EmployeeList employees={employees} /> */}
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+            >
+              <Box
+                sx={{
+                  mb: 3,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  component="h1"
+                  sx={{ fontWeight: 700 }}
                 >
-                  <GitHub fontSize="small" />
-                </IconButton>
+                  My Schedule
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={handleDialogOpen}
+                  sx={{ textTransform: "none" }}
+                >
+                  {t("New Event")}
+                </Button>
               </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", md: "row" },
+                  gap: 3,
+                }}
+              >
+                {/* Events List */}
+                <Paper
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    width: { xs: "100%", md: 300 },
+                    maxHeight: 500,
+                    overflow: "auto",
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                    Upcoming Events
+                  </Typography>
+                  <Divider sx={{ mb: 2 }} />
+                  {events.length === 0 ? (
+                    <Typography variant="body2" color="text.secondary">
+                      No events scheduled
+                    </Typography>
+                  ) : (
+                    events
+                      .sort(
+                        (a, b) =>
+                          new Date(a.start).getTime() -
+                          new Date(b.start).getTime()
+                      )
+                      .map((event, idx) => (
+                        <Paper
+                          key={idx}
+                          elevation={1}
+                          sx={{
+                            p: 1.5,
+                            mb: 1.5,
+                            bgcolor: event.color || "primary.main",
+                            color: "#fff",
+                            position: "relative",
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 600 }}
+                          >
+                            {event.title}
+                          </Typography>
+                          <Typography variant="caption">
+                            {moment(event.start).format("MMM D, YYYY")}
+                            {!event.allDay &&
+                              ` • ${moment(event.start).format(
+                                "h:mm A"
+                              )} - ${moment(event.end).format("h:mm A")}`}
+                          </Typography>
+                          <Box sx={{ position: "absolute", top: 4, right: 4 }}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleEdit(idx)}
+                              sx={{ color: "#fff" }}
+                            >
+                              <Edit fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDelete(event._id)}
+                              sx={{ color: "#fff" }}
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Box>
+                        </Paper>
+                      ))
+                  )}
+                </Paper>
+
+                {/* Calendar Section */}
+                {/* <Droppable droppableId="calendar" type="CALENDAR">
+                  {(provided) => (
+                    <Box
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      sx={{ flex: 1 }}
+                    >
+                      <DragAndDropCalendar
+                        localizer={localizer}
+                        events={events}
+                        onEventDrop={onEventDrop}
+                        onEventResize={onEventResize}
+                        resizable
+                        showAllEvents
+                        showMultiDayTimes
+                        style={{ height: 600 }}
+                        onView={handleViewChange}
+                        className={`rounded-lg shadow-sm ${currentView}`}
+                        eventPropGetter={eventStyleGetter}
+                        defaultView={Views.MONTH}
+                        components={{
+                          event: (props) => (
+                            <EventComponent {...props} employees={employees} />
+                          ),
+                        }}
+                      />
+                      {provided.placeholder}
+                    </Box>
+                  )}
+                </Droppable> */}
+                <Droppable droppableId="calendar">
+                  {(provided) => (
+                    <Box
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      sx={{ flex: 1 }}
+                    >
+                      <DragAndDropCalendar
+                        localizer={localizer}
+                        events={events}
+                        onEventDrop={onEventDrop}
+                        onEventResize={onEventResize}
+                        resizable
+                        showAllEvents
+                        showMultiDayTimes
+                        style={{ height: 600 }}
+                        onView={handleViewChange}
+                        className={`rounded-lg shadow-sm ${currentView}`}
+                        eventPropGetter={eventStyleGetter}
+                        defaultView={Views.MONTH}
+                        components={{
+                          event: (props) => (
+                            <EventComponent {...props} employees={employees} />
+                          ),
+                        }}
+                      />
+                      {provided.placeholder}
+                    </Box>
+                  )}
+                </Droppable>
+                {/* Event Dialog */}
+                <Dialog
+                  open={openDialog}
+                  onClose={handleDialogClose}
+                  fullWidth
+                  maxWidth="sm"
+                >
+                  <DialogTitle>
+                    {editingIndex !== null ? "Edit Event" : "Create New Event"}
+                  </DialogTitle>
+                  <DialogContent>
+                    <Box sx={{ mt: 2 }}>
+                      <TextField
+                        fullWidth
+                        label="Event Title"
+                        sx={{ mt: 2, mb: 1 }}
+                        variant="outlined"
+                        value={newEvent.title}
+                        onChange={(e) =>
+                          setNewEvent({ ...newEvent, title: e.target.value })
+                        }
+                      />
+                      <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                        <TextField
+                          fullWidth
+                          type="datetime-local"
+                          label="Start"
+                          sx={{ mt: 2, mb: 1 }}
+                          variant="outlined"
+                          InputLabelProps={{ shrink: true }}
+                          value={moment(newEvent.start).format(
+                            "YYYY-MM-DDTHH:mm"
+                          )}
+                          onChange={(e) =>
+                            setNewEvent({
+                              ...newEvent,
+                              start: new Date(e.target.value),
+                            })
+                          }
+                        />
+                        <TextField
+                          fullWidth
+                          type="datetime-local"
+                          label="End"
+                          sx={{ mt: 2, mb: 1 }}
+                          variant="outlined"
+                          InputLabelProps={{ shrink: true }}
+                          value={moment(newEvent.end).format(
+                            "YYYY-MM-DDTHH:mm"
+                          )}
+                          onChange={(e) =>
+                            setNewEvent({
+                              ...newEvent,
+                              end: new Date(e.target.value),
+                            })
+                          }
+                        />
+                      </Box>
+                      <Box sx={{ mt: 2 }}>
+                        <Typography variant="subtitle1" sx={{ mb: 1 }}>
+                          Event Color
+                        </Typography>
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                          {colorOptions.map((color) => (
+                            <Box
+                              key={color}
+                              onClick={() =>
+                                setNewEvent({ ...newEvent, color })
+                              }
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                bgcolor: color,
+                                borderRadius: "50%",
+                                cursor: "pointer",
+                                border:
+                                  newEvent.color === color
+                                    ? `3px solid ${
+                                        theme.palette.mode === "dark"
+                                          ? "#fff"
+                                          : "#000"
+                                      }`
+                                    : "none",
+                                "&:hover": {
+                                  transform: "scale(1.1)",
+                                },
+                              }}
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    </Box>
+                  </DialogContent>
+                  <DialogActions>
+                    <Button onClick={handleDialogClose}>Cancel</Button>
+                    <Button
+                      variant="contained"
+                      onClick={handleSaveEvent}
+                      disabled={!newEvent.title}
+                    >
+                      {editingIndex !== null ? "Save Changes" : "Create Event"}
+                    </Button>
+                  </DialogActions>
+                </Dialog>
+              </Box>
+            </motion.div>
+            {/* Footer */}
+            <Box
+              component="footer"
+              sx={{
+                py: 3,
+                px: 2,
+                mt: "auto",
+                bgcolor: mode === "dark" ? "background.paper" : "grey.100",
+              }}
+            >
+              <Container maxWidth="lg">
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", sm: "row" },
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary">
+                    © {new Date().getFullYear()}
+                    {t("Modern Calendar App")}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Created with React, Material-UI, and React Big Calendar
+                  </Typography>
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <IconButton
+                      size="small"
+                      href="https://github.com/yourusername"
+                      target="_blank"
+                      rel="noopener"
+                    >
+                      <GitHub fontSize="small" />
+                    </IconButton>
+                  </Box>
+                </Box>
+              </Container>
             </Box>
-          </Container>
+          </Box>
+          <AuthDialog
+            open={authOpen}
+            onClose={() => setAuthOpen(false)}
+            onLogin={handleLogin}
+            onRegister={handleRegister}
+          />
         </Box>
       </Box>
-      <AuthDialog
-        open={authOpen}
-        onClose={() => setAuthOpen(false)}
-        onLogin={handleLogin}
-        onRegister={handleRegister}
-      />
+      </Dnd>
     </ThemeProvider>
   );
 }
