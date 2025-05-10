@@ -2,7 +2,6 @@
 import axios from 'axios';
 
 // export const API_URL = 'http://localhost:5000/api';
-// export const API_URL = 'https://calenderserver.netlify.app/api';
 export const API_URL = 'https://calenderserver5.onrender.com/api';
 
 export const register = async (username: string, password: string) => {

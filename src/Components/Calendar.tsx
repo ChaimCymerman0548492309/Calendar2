@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 // הוסף מתחת ליתר ה-imports הקיימים
-import { useEffect } from 'react';
-import { register, login, getCurrentUser } from './auth';
-import { getEvents, createEvent, updateEvent, deleteEvent } from './events';
-import AuthDialog from './AuthDialog';
-import { ExitToApp, AccountCircle } from '@mui/icons-material'; // להוספת האייקונים
+import { useEffect } from "react";
+import { register, login, getCurrentUser } from "./auth";
+import { getEvents, createEvent, updateEvent, deleteEvent } from "./events";
+import AuthDialog from "./AuthDialog";
+import { ExitToApp, AccountCircle } from "@mui/icons-material"; // להוספת האייקונים
 import Bee from "./Bee/Bee"; // הוסף את קומפוננטת האנימציה
 import {
   Calendar as BigCalendar,
@@ -50,11 +50,11 @@ import {
   GitHub,
 } from "@mui/icons-material";
 import "./Ca.css";
-import  DragDropContext  from "react-big-calendar/lib/addons/dragAndDrop";
-import { useTranslation } from 'react-i18next';
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
-import './i18n'; // ניצור קובץ זה בהמשך
+import DragDropContext from "react-big-calendar/lib/addons/dragAndDrop";
+import { useTranslation } from "react-i18next";
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import "./i18n"; // ניצור קובץ זה בהמשך
 
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent, object>(BigCalendar);
 
@@ -63,7 +63,7 @@ const localizer = momentLocalizer(moment);
 // const DragAndDropCalendar = withDragAndDrop(BigCalendar);
 
 interface CalendarEvent {
-  id: number;
+  _id: number;
   title: string;
   start: Date;
   end: Date;
@@ -73,21 +73,21 @@ interface CalendarEvent {
 
 const initialEvents: CalendarEvent[] = [
   {
-    id: 1,
+    _id: 1,
     title: "Meeting with Team",
     start: new Date(new Date().setHours(10, 0, 0, 0)),
     end: new Date(new Date().setHours(11, 30, 0, 0)),
     color: "#4e79a7",
   },
   {
-    id: 2,
+    _id: 2,
     title: "Lunch Break",
     start: new Date(new Date().setHours(12, 0, 0, 0)),
     end: new Date(new Date().setHours(13, 0, 0, 0)),
     color: "#e15759",
   },
   {
-    id: 3,
+    _id: 3,
     title: "Project Deadline",
     start: new Date(new Date().setDate(new Date().getDate() + 2)),
     end: new Date(new Date().setDate(new Date().getDate() + 2)),
@@ -111,7 +111,7 @@ const colorOptions = [
 
 function Calendar() {
   // הוסף מתחת ל-state הקיים
-  
+
   const [authOpen, setAuthOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true); // לטובת האנימציה
@@ -148,7 +148,13 @@ function Calendar() {
           const response = await getCurrentUser();
           setUser(response.data);
           const eventsResponse = await getEvents();
-          setEvents(eventsResponse.data);
+          setEvents(
+            eventsResponse.data.map((event: CalendarEvent) => ({
+              ...event,
+              start: new Date(event.start), // המרה מפורשת ל-Date
+              end: new Date(event.end), // המרה מפורשת ל-Date
+            }))
+          );
         } else {
           setAuthOpen(true);
         }
@@ -162,6 +168,7 @@ function Calendar() {
 
     fetchUser();
   }, []);
+
   // הוסף מתחת ל-useEffect
   const handleLogin = async (username: string, password: string) => {
     setLoading(true); // הצג אנימציה בזמן טעינה
@@ -170,7 +177,14 @@ function Calendar() {
       localStorage.setItem("token", response.data.token);
       setUser(response.data.user);
       const eventsResponse = await getEvents();
-      setEvents(eventsResponse.data);
+
+      setEvents(
+        eventsResponse.data.map((event: CalendarEvent) => ({
+          ...event,
+          start: new Date(event.start), // המרה מפורשת ל-Date
+          end: new Date(event.end), // המרה מפורשת ל-Date
+        }))
+      );
     } finally {
       setLoading(false); // הסתר אנימציה
     }
@@ -190,7 +204,7 @@ function Calendar() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    setEvents([]);
+    setEvents(initialEvents);
     setAuthOpen(true);
   };
   const theme = React.useMemo(
@@ -222,30 +236,58 @@ function Calendar() {
     setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
   };
 
-  const onEventDrop = ({
+  const onEventDrop = async ({
     event,
     start,
     end,
   }: EventInteractionArgs<CalendarEvent>) => {
-    const updatedEvents = events.map((existingEvent) =>
-      existingEvent.id === event.id
-        ? { ...event, start: new Date(start), end: new Date(end) }
-        : existingEvent
-    );
-    setEvents(updatedEvents);
+    try {
+      // יצירת אובייקט מעודכן עם תאריכים חדשים
+      const updatedEvent = {
+        ...event,
+        start: new Date(start),
+        end: new Date(end),
+      };
+
+      // עדכון המקומי
+      const updatedEvents = events.map((existingEvent) =>
+        existingEvent._id === event._id ? updatedEvent : existingEvent
+      );
+      setEvents(updatedEvents);
+
+      // שליחה לשרת
+      await updateEvent(event._id, updatedEvent);
+    } catch (error) {
+      console.error("שגיאה בעדכון אירוע:", error);
+      // ניתן להוסיף כאן טיפול בשגיאות/התראות למשתמש
+    }
   };
 
-  const onEventResize = ({
+  const onEventResize = async ({
     event,
     start,
     end,
   }: EventInteractionArgs<CalendarEvent>) => {
-    const updatedEvents = events.map((existingEvent) =>
-      existingEvent.id === event.id
-        ? { ...event, start: new Date(start), end: new Date(end) }
-        : existingEvent
-    );
-    setEvents(updatedEvents);
+    try {
+      // יצירת אובייקט מעודכן עם תאריכים חדשים
+      const updatedEvent = {
+        ...event,
+        start: new Date(start),
+        end: new Date(end),
+      };
+
+      // עדכון המקומי
+      const updatedEvents = events.map((existingEvent) =>
+        existingEvent._id === event._id ? updatedEvent : existingEvent
+      );
+      setEvents(updatedEvents);
+
+      // שליחה לשרת
+      await updateEvent(event._id, updatedEvent);
+    } catch (error) {
+      console.error("שגיאה בשינוי גודל אירוע:", error);
+      // ניתן להוסיף כאן טיפול בשגיאות/התראות למשתמש
+    }
   };
 
   const handleViewChange = (view: string) => {
@@ -280,7 +322,7 @@ function Calendar() {
       try {
         if (editingIndex !== null) {
           const updatedEvent = await updateEvent(
-            newEvent.id!,
+            newEvent._id!,
             newEvent as CalendarEvent
           );
           const updated = [...events];
@@ -303,7 +345,7 @@ function Calendar() {
     setLoading(true);
     try {
       await deleteEvent(id);
-      setEvents(events.filter((event) => event.id !== id));
+      setEvents(events.filter((event) => event._id !== id));
     } catch (error) {
       console.error("Error deleting event:", error);
     } finally {
@@ -441,10 +483,14 @@ function Calendar() {
                   </Typography>
                 ) : (
                   events
-                    .sort((a, b) => a.start.getTime() - b.start.getTime())
+                    .sort(
+                      (a, b) =>
+                        new Date(a.start).getTime() -
+                        new Date(b.start).getTime()
+                    )
                     .map((event, idx) => (
                       <Paper
-                        key={event.id}
+                        key={idx}
                         elevation={1}
                         sx={{
                           p: 1.5,
@@ -477,7 +523,7 @@ function Calendar() {
                           </IconButton>
                           <IconButton
                             size="small"
-                            onClick={() => handleDelete(event.id)}
+                            onClick={() => handleDelete(event._id)}
                             sx={{ color: "#fff" }}
                           >
                             <Delete fontSize="small" />
@@ -498,11 +544,12 @@ function Calendar() {
                   resizable
                   showAllEvents
                   showMultiDayTimes
+                  // onDrillDown={() => setCurrentView(Views.DAY)}
                   style={{ height: 600 }}
                   onView={handleViewChange}
                   className={`rounded-lg shadow-sm ${currentView}`}
                   eventPropGetter={eventStyleGetter}
-                  views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
+                  // views={[Views.MONTH, Views.WEEK, Views.DAY, Views.AGENDA]}
                   defaultView={Views.MONTH}
                   components={{
                     event: ({ event }) => (
