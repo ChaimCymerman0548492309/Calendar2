@@ -50,19 +50,23 @@ import {
   GitHub,
 } from "@mui/icons-material";
 import "./Ca.css";
-import DragDropContext from "react-big-calendar/lib/addons/dragAndDrop";
+// import DragDropContext from "react-big-calendar/lib/addons/dragAndDrop";
 import { useTranslation } from "react-i18next";
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import "./i18n"; // ניצור קובץ זה בהמשך
 import { Employee, EmployeeList } from "./EmployeeList";
 import { Droppable, DropResult } from "react-beautiful-dnd";
-import { DragDropContext as Dnd } from 'react-beautiful-dnd';
+// import { DragDropContext as Dnd } from 'react-beautiful-dnd';
 import { EventComponent } from "./EventComponent";
 import { handleEmployeeDrop } from "./dragUtils";
 import axios from "axios";
+// שנה ל:
+import { DragDropContext, Draggable } from "react-beautiful-dnd";
+
 
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent, object>(BigCalendar);
+// const DragAndDropCalendar = withDragAndDrop<CalendarEvent, object>(BigCalendar);
 
 const localizer = momentLocalizer(moment);
 
@@ -75,6 +79,7 @@ export interface CalendarEvent {
   end: Date;
   allDay?: boolean;
   color?: string;
+  employeeId?: string; // הוסף את זה
 }
 
 const initialEvents: CalendarEvent[] = [
@@ -398,7 +403,7 @@ const onEventDrop = async ({
   };
 
 const onEmployeeDrop = (result: DropResult) => {
-  handleEmployeeDrop(result, events, setEvents, updateEventAssignment);
+  // handleEmployeeDrop(result, events, setEvents, updateEventAssignment);
 };
 
 const updateEventAssignment = async (eventId: string, employeeId: string) => {
@@ -409,9 +414,28 @@ const updateEventAssignment = async (eventId: string, employeeId: string) => {
   }
 };
 
+const moveEmployee = (dragIndex: number, hoverIndex: number) => {
+  setEmployees((prev) => {
+    const newItems = [...prev];
+    const [removed] = newItems.splice(dragIndex, 1);
+    newItems.splice(hoverIndex, 0, removed);
+    return newItems;
+  });
+};
+
+const handleEmployeeAssign = (employeeId: string, eventId: string) => {
+  setEvents((prevEvents) =>
+    prevEvents.map((event) =>
+      event._id.toString() === eventId ? { ...event, employeeId } : event
+    )
+  );
+
+  // עדכון בשרת אם צריך
+  updateEventAssignment(eventId, employeeId);
+};
   return (
     <ThemeProvider theme={theme}>
-      <Dnd onDragEnd={onEmployeeDrop}>
+      {/* <Dnd onDragEnd={onEmployeeDrop}> */}
       <CssBaseline />
       {loading && <Bee />}
       <Box
@@ -471,8 +495,6 @@ const updateEventAssignment = async (eventId: string, employeeId: string) => {
 
           {/* Main Content */}
           <Box component="main" sx={{ flex: 1, p: 3 }}>
-            {/* <EmployeeList employees={employees} /> */}
-
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -582,66 +604,49 @@ const updateEventAssignment = async (eventId: string, employeeId: string) => {
                 </Paper>
 
                 {/* Calendar Section */}
-                {/* <Droppable droppableId="calendar" type="CALENDAR">
-                  {(provided) => (
-                    <Box
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      sx={{ flex: 1 }}
-                    >
-                      <DragAndDropCalendar
-                        localizer={localizer}
-                        events={events}
-                        onEventDrop={onEventDrop}
-                        onEventResize={onEventResize}
-                        resizable
-                        showAllEvents
-                        showMultiDayTimes
-                        style={{ height: 600 }}
-                        onView={handleViewChange}
-                        className={`rounded-lg shadow-sm ${currentView}`}
-                        eventPropGetter={eventStyleGetter}
-                        defaultView={Views.MONTH}
-                        components={{
-                          event: (props) => (
-                            <EventComponent {...props} employees={employees} />
-                          ),
-                        }}
+                {/* <EmployeeList employees={employees} /> */}
+                <EmployeeList
+                  employees={employees}
+                  moveEmployee={moveEmployee}
+                />
+
+                {/* <DragDropContext onDragEnd={onEmployeeDrop}> */}
+                {/* <Droppable droppableId="calendar">
+                    {(provided) => (
+                      <Box
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        sx={{ flex: 1 }}
+                      >  */}
+                <DragAndDropCalendar
+                  localizer={localizer}
+                  events={events}
+                  onEventDrop={onEventDrop}
+                  onEventResize={onEventResize}
+                  resizable
+                  showAllEvents
+                  showMultiDayTimes
+                  style={{ height: 600 }}
+                  onView={handleViewChange}
+                  className={`rounded-lg shadow-sm ${currentView}`}
+                  eventPropGetter={eventStyleGetter}
+                  defaultView={Views.MONTH}
+                  components={{
+                    event: (props) => (
+                      <EventComponent
+                        {...props}
+                        employees={employees}
+                        onEmployeeAssign={handleEmployeeAssign}
                       />
-                      {provided.placeholder}
-                    </Box>
-                  )}
-                </Droppable> */}
-                <Droppable droppableId="calendar">
-                  {(provided) => (
-                    <Box
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      sx={{ flex: 1 }}
-                    >
-                      <DragAndDropCalendar
-                        localizer={localizer}
-                        events={events}
-                        onEventDrop={onEventDrop}
-                        onEventResize={onEventResize}
-                        resizable
-                        showAllEvents
-                        showMultiDayTimes
-                        style={{ height: 600 }}
-                        onView={handleViewChange}
-                        className={`rounded-lg shadow-sm ${currentView}`}
-                        eventPropGetter={eventStyleGetter}
-                        defaultView={Views.MONTH}
-                        components={{
-                          event: (props) => (
-                            <EventComponent {...props} employees={employees} />
-                          ),
-                        }}
-                      />
-                      {provided.placeholder}
-                    </Box>
-                  )}
-                </Droppable>
+                    ),
+                  }}
+                />
+                {/* {provided.placeholder}
+                      </Box>
+                    )} */}
+                {/* </Droppable> */}
+                {/* </DragDropContext> */}
+
                 {/* Event Dialog */}
                 <Dialog
                   open={openDialog}
@@ -796,7 +801,7 @@ const updateEventAssignment = async (eventId: string, employeeId: string) => {
           />
         </Box>
       </Box>
-      </Dnd>
+      {/* </Dnd> */}
     </ThemeProvider>
   );
 }

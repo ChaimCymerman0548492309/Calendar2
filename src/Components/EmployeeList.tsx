@@ -1,6 +1,7 @@
+import { useDrag, useDrop, DndProvider } from "react-dnd";
+import { HTML5Backend } from "react-dnd-html5-backend";
 import { Divider, Paper, Typography } from "@mui/material";
-import React from "react";
-import { Draggable } from "react-beautiful-dnd";
+import { useRef } from "react";
 
 export interface Employee {
   _id: string;
@@ -12,56 +13,68 @@ export interface Employee {
 
 interface EmployeeListProps {
   employees: Employee[];
+  moveEmployee: (dragIndex: number, hoverIndex: number) => void;
 }
 
-export const EmployeeList = ({ employees }: EmployeeListProps) => {
+const ItemTypes = {
+  EMPLOYEE: "employee",
+};
+
+const EmployeeCard = ({ employee }: { employee: Employee }) => {
+  const [{ isDragging }, drag] = useDrag(() => ({
+    type: "EMPLOYEE",
+    item: { id: employee._id },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  }));
+
   return (
-    <Paper
-      elevation={3}
-      sx={{
-        p: 2,
-        width: 250,
-        maxHeight: "80vh",
-        overflow: "auto",
+    <div
+      ref={drag}
+      style={{
+        opacity: isDragging ? 0.5 : 1,
+        marginBottom: "8px",
+        cursor: "move",
       }}
     >
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Employees
-      </Typography>
-      <Divider sx={{ mb: 2 }} />
+      <Paper
+        sx={{
+          p: 2,
+          backgroundColor: employee.color,
+          color: "#fff",
+        }}
+      >
+        <Typography fontWeight="bold">{employee.name}</Typography>
+        <Typography variant="body2">{employee.position}</Typography>
+      </Paper>
+    </div>
+  );
+};
+export const EmployeeList = ({
+  employees,
+  moveEmployee,
+}: EmployeeListProps) => {
+  return (
+    <DndProvider backend={HTML5Backend}>
+      <Paper
+        elevation={3}
+        sx={{ p: 2, width: 250, maxHeight: "80vh", overflow: "auto" }}
+      >
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Employees
+        </Typography>
+        <Divider sx={{ mb: 2 }} />
 
-      {employees.map((employee, index) => (
-        <Draggable key={employee._id} draggableId={employee._id} index={index}>
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.draggableProps}
-              {...provided.dragHandleProps}
-              style={{
-                ...provided.draggableProps.style,
-                marginBottom: "8px",
-                opacity: snapshot.isDragging ? 0.8 : 1,
-                transform: snapshot.isDragging ? "scale(1.02)" : "none",
-                transition: "all 0.2s ease",
-              }}
-            >
-              <Paper
-                sx={{
-                  p: 2,
-                  backgroundColor: employee.color || "#f5f5f5",
-                  color: "#fff",
-                  "&:hover": {
-                    boxShadow: 3,
-                  },
-                }}
-              >
-                <Typography fontWeight="bold">{employee.name}</Typography>
-                <Typography variant="body2">{employee.position}</Typography>
-              </Paper>
-            </div>
-          )}
-        </Draggable>
-      ))}
-    </Paper>
+        {employees.map((employee, index) => (
+          <EmployeeCard
+            key={employee._id}
+            employee={employee}
+            // index={index}
+            // moveEmployee={moveEmployee}
+          />
+        ))}
+      </Paper>
+    </DndProvider>
   );
 };

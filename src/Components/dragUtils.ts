@@ -9,8 +9,9 @@ export const handleEmployeeDrop = (
 ) => {
   if (!result.destination) return;
 
-  const { destination } = result;
+  const { source, destination } = result;
 
+  // אם העברת עובד לאירוע
   if (destination.droppableId.startsWith("event-")) {
     const eventId = destination.droppableId.replace("event-", "");
     const employeeId = result.draggableId.replace("employee-", "");
@@ -23,3 +24,4 @@ export const handleEmployeeDrop = (
     updateEventAssignment(eventId, employeeId);
   }
 };
+
