@@ -20,15 +20,15 @@ export const createEvent = async (event: any) => {
   });
 };
 
-export const updateEvent = async (id: number, event: any) => {
+export const updateEvent = async (id: string, event: any) => {
   return axios.put(`${API_URL}/events/${id}`, event, {
     headers: {
-      Authorization: `Bearer ${localStorage.getItem('token')}`,
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
     },
   });
 };
 
-export const deleteEvent = async (id: number) => {
+export const deleteEvent = async (id: string) => {
   return axios.delete(`${API_URL}/events/${id}`, {
     headers: {
       Authorization: `Bearer ${localStorage.getItem('token')}`,

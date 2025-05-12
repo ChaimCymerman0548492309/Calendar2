@@ -35,7 +35,7 @@ const EmployeeCard = ({ employee }: { employee: Employee }) => {
       style={{
         opacity: isDragging ? 0.5 : 1,
         marginBottom: "8px",
-        cursor: "move",
+        cursor: isDragging ? "grabbing" : "grab",
       }}
     >
       <Paper

@@ -17,7 +17,7 @@ export const EventComponent: React.FC<EventComponentProps> = ({
     () => ({
       accept: "EMPLOYEE",
       drop: (item: { id: string }) => {
-        onEmployeeAssign(item.id, event._id.toString());
+        onEmployeeAssign(item.id, event._id);
       },
       collect: (monitor) => ({
         isOver: monitor.isOver(),
@@ -35,20 +35,55 @@ export const EventComponent: React.FC<EventComponentProps> = ({
         backgroundColor: isOver ? "rgba(0, 150, 255, 0.2)" : "transparent",
         border: isOver ? "2px dashed #0096ff" : "none",
         borderRadius: "4px",
-        transition: "all 0.3s ease",
       }}
     >
       <strong>{event.title}</strong>
-      {event.employeeId && (
-        <div
-          style={{
-            background: "#fff3",
-            marginTop: "5px",
-            padding: "2px",
-            borderRadius: "3px",
-          }}
-        >
-          {employees.find((e) => e._id === event.employeeId)?.name}
+      {event.employeeIds && event.employeeIds!.length > 0 && (
+        <div style={{ marginTop: "5px" }}>
+          {event.employeeIds!.map((employeeId) => {
+            const employee = employees.find((e) => e._id === employeeId);
+            return employee ? (
+              <div
+                key={employeeId}
+                style={{
+                  background: "#fff3",
+                  padding: "2px",
+                  borderRadius: "3px",
+                  marginBottom: "2px",
+                }}
+              >
+                <div
+                  key={employeeId}
+                  style={{
+                    background: "#fff3",
+                    padding: "2px",
+                    borderRadius: "3px",
+                    marginBottom: "2px",
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span>{employee.name}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEmployeeAssign(employeeId, event._id);
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#ff4444",
+                      cursor: "pointer",
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+                {/* {employee.name} */}
+              </div>
+            ) : null;
+          })}
         </div>
       )}
     </div>

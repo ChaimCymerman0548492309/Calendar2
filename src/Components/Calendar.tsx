@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 // הוסף מתחת ליתר ה-imports הקיימים
 import { useEffect } from "react";
-import { register, login, getCurrentUser } from "./auth";
+import { register, login, getCurrentUser, API_URL } from "./auth";
 import { getEvents, createEvent, updateEvent, deleteEvent } from "./events";
 import AuthDialog from "./AuthDialog";
 import { ExitToApp, AccountCircle } from "@mui/icons-material"; // להוספת האייקונים
@@ -73,37 +73,41 @@ const localizer = momentLocalizer(moment);
 // const DragAndDropCalendar = withDragAndDrop(BigCalendar);
 
 export interface CalendarEvent {
-  _id: number;
+  _id: string;
   title: string;
   start: Date;
   end: Date;
   allDay?: boolean;
   color?: string;
-  employeeId?: string; // הוסף את זה
+  // employeeId?: string;
+  employeeIds?: string[]; // מערך של מזהי עובדים במקום employeeId בודד
 }
 
 const initialEvents: CalendarEvent[] = [
   {
-    _id: 1,
+    _id: '1',
     title: "Meeting with Team",
     start: new Date(new Date().setHours(10, 0, 0, 0)),
     end: new Date(new Date().setHours(11, 30, 0, 0)),
     color: "#4e79a7",
+    employeeIds :[]
   },
   {
-    _id: 2,
+    _id: '2',
     title: "Lunch Break",
     start: new Date(new Date().setHours(12, 0, 0, 0)),
     end: new Date(new Date().setHours(13, 0, 0, 0)),
     color: "#e15759",
+    employeeIds :[]
   },
   {
-    _id: 3,
+    _id: '3',
     title: "Project Deadline",
     start: new Date(new Date().setDate(new Date().getDate() + 2)),
     end: new Date(new Date().setDate(new Date().getDate() + 2)),
     allDay: true,
     color: "#59a14f",
+    employeeIds :[]
   },
 ];
 
@@ -371,7 +375,7 @@ const onEventDrop = async ({
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     setLoading(true);
     try {
       await deleteEvent(id);
@@ -408,9 +412,26 @@ const onEmployeeDrop = (result: DropResult) => {
 
 const updateEventAssignment = async (eventId: string, employeeId: string) => {
   try {
-    await axios.patch(`/events/${eventId}/assign`, { employeeId });
+    const response = await axios.patch(
+      `${API_URL}/events/${eventId}/employees`,
+      {
+        employeeId,
+        action: events
+          .find((e) => e._id === eventId)
+          ?.employeeIds?.includes(employeeId)
+          ? "remove"
+          : "add",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    return response.data;
   } catch (error) {
     console.error("Failed to update event assignment", error);
+    throw error; // זרוק את השגיאה כדי שניתן יהיה לטפל בה במקום הקריאה
   }
 };
 
@@ -423,15 +444,26 @@ const moveEmployee = (dragIndex: number, hoverIndex: number) => {
   });
 };
 
-const handleEmployeeAssign = (employeeId: string, eventId: string) => {
-  setEvents((prevEvents) =>
-    prevEvents.map((event) =>
-      event._id.toString() === eventId ? { ...event, employeeId } : event
-    )
-  );
-
-  // עדכון בשרת אם צריך
-  updateEventAssignment(eventId, employeeId);
+const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
+  try {
+    await updateEventAssignment(eventId, employeeId);
+    // עדכן את ה-state המקומי
+    setEvents((prevEvents) =>
+      prevEvents.map((event) => {
+        if (event._id === eventId) {
+          const employeeIds = event.employeeIds || [];
+          const updatedEmployeeIds = employeeIds.includes(employeeId)
+            ? employeeIds.filter((id) => id !== employeeId)
+            : [...employeeIds, employeeId];
+          return { ...event, employeeIds: updatedEmployeeIds };
+        }
+        return event;
+      })
+    );
+  } catch (error) {
+    console.error("Error assigning employee:", error);
+    // אפשר להוסיף כאן התראה למשתמש
+  }
 };
   return (
     <ThemeProvider theme={theme}>
