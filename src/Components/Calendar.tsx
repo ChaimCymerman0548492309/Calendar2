@@ -446,7 +446,9 @@ const moveEmployee = (dragIndex: number, hoverIndex: number) => {
 
 const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
   try {
-    await updateEventAssignment(eventId, employeeId);
+    if (user) {
+      await updateEventAssignment(eventId, employeeId);
+    }
     // עדכן את ה-state המקומי
     setEvents((prevEvents) =>
       prevEvents.map((event) => {
