@@ -1,69 +1,59 @@
 import React, { useState } from "react";
 // הוסף מתחת ליתר ה-imports הקיימים
-import { useEffect } from "react";
-import { register, login, getCurrentUser, API_URL } from "./auth";
-import { getEvents, createEvent, updateEvent, deleteEvent } from "./events";
-import AuthDialog from "./AuthDialog";
-import { ExitToApp, AccountCircle } from "@mui/icons-material"; // להוספת האייקונים
-import Bee from "./Bee/Bee"; // הוסף את קומפוננטת האנימציה
 import {
-  Calendar as BigCalendar,
-  momentLocalizer,
-  Views,
-  stringOrDate,
-} from "react-big-calendar";
-import withDragAndDrop, {
-  EventInteractionArgs,
-} from "react-big-calendar/lib/addons/dragAndDrop";
-import moment from "moment";
-import "react-big-calendar/lib/css/react-big-calendar.css";
-import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
-import { motion } from "framer-motion";
-import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  TextField,
-  IconButton,
-  AppBar,
-  Toolbar,
-  Typography,
-  Box,
-  CssBaseline,
-  PaletteMode,
-  ThemeProvider,
-  createTheme,
-  useMediaQuery,
-  Paper,
-  Divider,
-  Container,
-} from "@mui/material";
-import {
-  Delete,
-  Edit,
+  AccountCircle,
   Add,
   Brightness4,
   Brightness7,
   CalendarToday,
+  Delete,
+  Edit,
+  ExitToApp,
   GitHub,
-} from "@mui/icons-material";
+} from "@mui/icons-material"; // להוספת האייקונים
+import {
+  AppBar,
+  Box,
+  Button,
+  Container,
+  createTheme,
+  CssBaseline,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  IconButton,
+  PaletteMode,
+  Paper,
+  TextField,
+  ThemeProvider,
+  Toolbar,
+  Typography,
+  useMediaQuery,
+} from "@mui/material";
+import { motion } from "framer-motion";
+import moment from "moment";
+import { useEffect } from "react";
+import { Calendar as BigCalendar, momentLocalizer, Views } from "react-big-calendar";
+import withDragAndDrop, { EventInteractionArgs } from "react-big-calendar/lib/addons/dragAndDrop";
+import "react-big-calendar/lib/addons/dragAndDrop/styles.css";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import AuthDialog from "./AuthDialog";
+import Bee from "./Bee/Bee"; // הוסף את קומפוננטת האנימציה
 import "./Ca.css";
+import { API_URL, getCurrentUser, login, register } from "./auth";
+import { createEvent, deleteEvent, getEvents, updateEvent } from "./events";
 // import DragDropContext from "react-big-calendar/lib/addons/dragAndDrop";
-import { useTranslation } from "react-i18next";
 import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import "./i18n"; // ניצור קובץ זה בהמשך
+import { DropResult } from "react-beautiful-dnd";
+import { useTranslation } from "react-i18next";
 import { Employee, EmployeeList } from "./EmployeeList";
-import { Droppable, DropResult } from "react-beautiful-dnd";
+import "./i18n"; // ניצור קובץ זה בהמשך
 // import { DragDropContext as Dnd } from 'react-beautiful-dnd';
-import { EventComponent } from "./EventComponent";
-import { handleEmployeeDrop } from "./dragUtils";
 import axios from "axios";
+import { EventComponent } from "./EventComponent";
 // שנה ל:
-import { DragDropContext, Draggable } from "react-beautiful-dnd";
-
 
 const DragAndDropCalendar = withDragAndDrop<CalendarEvent, object>(BigCalendar);
 // const DragAndDropCalendar = withDragAndDrop<CalendarEvent, object>(BigCalendar);
@@ -85,29 +75,29 @@ export interface CalendarEvent {
 
 const initialEvents: CalendarEvent[] = [
   {
-    _id: '1',
+    _id: "1",
     title: "Meeting with Team",
     start: new Date(new Date().setHours(10, 0, 0, 0)),
     end: new Date(new Date().setHours(11, 30, 0, 0)),
     color: "#4e79a7",
-    employeeIds :[]
+    employeeIds: [],
   },
   {
-    _id: '2',
+    _id: "2",
     title: "Lunch Break",
     start: new Date(new Date().setHours(12, 0, 0, 0)),
     end: new Date(new Date().setHours(13, 0, 0, 0)),
     color: "#e15759",
-    employeeIds :[]
+    employeeIds: [],
   },
   {
-    _id: '3',
+    _id: "3",
     title: "Project Deadline",
     start: new Date(new Date().setDate(new Date().getDate() + 2)),
     end: new Date(new Date().setDate(new Date().getDate() + 2)),
     allDay: true,
     color: "#59a14f",
-    employeeIds :[]
+    employeeIds: [],
   },
 ];
 
@@ -180,11 +170,13 @@ function Calendar() {
           setUser(response.data);
           const eventsResponse = await getEvents();
           setEvents(
-            eventsResponse.data.map((event: CalendarEvent) => ({
-              ...event,
-              start: new Date(event.start), // המרה מפורשת ל-Date
-              end: new Date(event.end), // המרה מפורשת ל-Date
-            }))
+            eventsResponse.data
+              .filter((e: CalendarEvent) => e.start && e.end)
+              .map((event: CalendarEvent) => ({
+                ...event,
+                start: new Date(event.start), // המרה מפורשת ל-Date
+                end: new Date(event.end), // המרה מפורשת ל-Date
+              }))
           );
         } else {
           setAuthOpen(true);
@@ -210,11 +202,13 @@ function Calendar() {
       const eventsResponse = await getEvents();
 
       setEvents(
-        eventsResponse.data.map((event: CalendarEvent) => ({
-          ...event,
-          start: new Date(event.start), // המרה מפורשת ל-Date
-          end: new Date(event.end), // המרה מפורשת ל-Date
-        }))
+        eventsResponse.data
+          .filter((e: CalendarEvent) => e.start && e.end)
+          .map((event: CalendarEvent) => ({
+            ...event,
+            start: new Date(event.start), // המרה מפורשת ל-Date
+            end: new Date(event.end), // המרה מפורשת ל-Date
+          }))
       );
     } finally {
       setLoading(false); // הסתר אנימציה
@@ -251,13 +245,7 @@ function Calendar() {
           },
         },
         typography: {
-          fontFamily: [
-            '"Segoe UI"',
-            "Roboto",
-            '"Helvetica Neue"',
-            "Arial",
-            "sans-serif",
-          ].join(","),
+          fontFamily: ['"Segoe UI"', "Roboto", '"Helvetica Neue"', "Arial", "sans-serif"].join(","),
         },
       }),
     [mode]
@@ -267,14 +255,7 @@ function Calendar() {
     setMode((prevMode) => (prevMode === "light" ? "dark" : "light"));
   };
 
-
-
-
-const onEventDrop = async ({
-    event,
-    start,
-    end,
-  }: EventInteractionArgs<CalendarEvent>) => {
+  const onEventDrop = async ({ event, start, end }: EventInteractionArgs<CalendarEvent>) => {
     try {
       // יצירת אובייקט מעודכן עם תאריכים חדשים
       const updatedEvent = {
@@ -297,11 +278,7 @@ const onEventDrop = async ({
     }
   };
 
-  const onEventResize = async ({
-    event,
-    start,
-    end,
-  }: EventInteractionArgs<CalendarEvent>) => {
+  const onEventResize = async ({ event, start, end }: EventInteractionArgs<CalendarEvent>) => {
     try {
       // יצירת אובייקט מעודכן עם תאריכים חדשים
       const updatedEvent = {
@@ -355,10 +332,7 @@ const onEventDrop = async ({
       setLoading(true);
       try {
         if (editingIndex !== null) {
-          const updatedEvent = await updateEvent(
-            newEvent._id!,
-            newEvent as CalendarEvent
-          );
+          const updatedEvent = await updateEvent(newEvent._id!, newEvent as CalendarEvent);
           const updated = [...events];
           updated[editingIndex] = updatedEvent.data;
           setEvents(updated);
@@ -406,75 +380,69 @@ const onEventDrop = async ({
     };
   };
 
-const onEmployeeDrop = (result: DropResult) => {
-  // handleEmployeeDrop(result, events, setEvents, updateEventAssignment);
-};
+  const onEmployeeDrop = (result: DropResult) => {
+    // handleEmployeeDrop(result, events, setEvents, updateEventAssignment);
+  };
 
-const updateEventAssignment = async (eventId: string, employeeId: string) => {
-  try {
-    const response = await axios.patch(
-      `${API_URL}/events/${eventId}/employees`,
-      {
-        employeeId,
-        action: events
-          .find((e) => e._id === eventId)
-          ?.employeeIds?.includes(employeeId)
-          ? "remove"
-          : "add",
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+  const updateEventAssignment = async (eventId: string, employeeId: string) => {
+    try {
+      const response = await axios.patch(
+        `${API_URL}/events/${eventId}/employees`,
+        {
+          employeeId,
+          action: events.find((e) => e._id === eventId)?.employeeIds?.includes(employeeId) ? "remove" : "add",
         },
-      }
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Failed to update event assignment", error);
-    throw error; // זרוק את השגיאה כדי שניתן יהיה לטפל בה במקום הקריאה
-  }
-};
-
-const moveEmployee = (dragIndex: number, hoverIndex: number) => {
-  setEmployees((prev) => {
-    const newItems = [...prev];
-    const [removed] = newItems.splice(dragIndex, 1);
-    newItems.splice(hoverIndex, 0, removed);
-    return newItems;
-  });
-};
-
-const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
-  try {
-    if (user) {
-      await updateEventAssignment(eventId, employeeId);
-    }
-    // עדכן את ה-state המקומי
-    setEvents((prevEvents) =>
-      prevEvents.map((event) => {
-        if (event._id === eventId) {
-          const employeeIds = event.employeeIds || [];
-          const updatedEmployeeIds = employeeIds.includes(employeeId)
-            ? employeeIds.filter((id) => id !== employeeId)
-            : [...employeeIds, employeeId];
-          return { ...event, employeeIds: updatedEmployeeIds };
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
         }
-        return event;
-      })
-    );
-  } catch (error) {
-    console.error("Error assigning employee:", error);
-    // אפשר להוסיף כאן התראה למשתמש
-  }
-};
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Failed to update event assignment", error);
+      throw error; // זרוק את השגיאה כדי שניתן יהיה לטפל בה במקום הקריאה
+    }
+  };
+
+  const moveEmployee = (dragIndex: number, hoverIndex: number) => {
+    setEmployees((prev) => {
+      const newItems = [...prev];
+      const [removed] = newItems.splice(dragIndex, 1);
+      newItems.splice(hoverIndex, 0, removed);
+      return newItems;
+    });
+  };
+
+  const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
+    try {
+      if (user) {
+        await updateEventAssignment(eventId, employeeId);
+      }
+      // עדכן את ה-state המקומי
+      setEvents((prevEvents) =>
+        prevEvents.map((event) => {
+          if (event._id === eventId) {
+            const employeeIds = event.employeeIds || [];
+            const updatedEmployeeIds = employeeIds.includes(employeeId)
+              ? employeeIds.filter((id) => id !== employeeId)
+              : [...employeeIds, employeeId];
+            return { ...event, employeeIds: updatedEmployeeIds };
+          }
+          return event;
+        })
+      );
+    } catch (error) {
+      console.error("Error assigning employee:", error);
+      // אפשר להוסיף כאן התראה למשתמש
+    }
+  };
   return (
     <ThemeProvider theme={theme}>
       {/* <Dnd onDragEnd={onEmployeeDrop}> */}
       <CssBaseline />
       {loading && <Bee />}
-      <Box
-        sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}
-      >
+      <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
         <Box
           sx={{
             display: "flex",
@@ -486,11 +454,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
           {/* Header */}
           <AppBar position="static" elevation={0}>
             <Toolbar>
-              <IconButton
-                color="inherit"
-                onClick={toggleLanguage}
-                aria-label={t("Toggle language")}
-              >
+              <IconButton color="inherit" onClick={toggleLanguage} aria-label={t("Toggle language")}>
                 {language !== "en" ? "עב" : "En"}
               </IconButton>
               <CalendarToday sx={{ mr: 2 }} />
@@ -498,11 +462,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                 {/* Modern Calendar App */}
                 {t("Modern Calendar App")}
               </Typography>
-              <IconButton
-                color="inherit"
-                onClick={toggleColorMode}
-                aria-label="toggle theme"
-              >
+              <IconButton color="inherit" onClick={toggleColorMode} aria-label="toggle theme">
                 {mode !== "dark" ? <Brightness7 /> : <Brightness4 />}
               </IconButton>
               <IconButton
@@ -529,11 +489,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
 
           {/* Main Content */}
           <Box component="main" sx={{ flex: 1, p: 3 }}>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-            >
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
               <Box
                 sx={{
                   mb: 3,
@@ -542,11 +498,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                   alignItems: "center",
                 }}
               >
-                <Typography
-                  variant="h4"
-                  component="h1"
-                  sx={{ fontWeight: 700 }}
-                >
+                <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
                   My Schedule
                 </Typography>
                 <Button
@@ -586,11 +538,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                     </Typography>
                   ) : (
                     events
-                      .sort(
-                        (a, b) =>
-                          new Date(a.start).getTime() -
-                          new Date(b.start).getTime()
-                      )
+                      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
                       .map((event, idx) => (
                         <Paper
                           key={idx}
@@ -603,32 +551,19 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                             position: "relative",
                           }}
                         >
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 600 }}
-                          >
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                             {event.title}
                           </Typography>
                           <Typography variant="caption">
                             {moment(event.start).format("MMM D, YYYY")}
                             {!event.allDay &&
-                              ` • ${moment(event.start).format(
-                                "h:mm A"
-                              )} - ${moment(event.end).format("h:mm A")}`}
+                              ` • ${moment(event.start).format("h:mm A")} - ${moment(event.end).format("h:mm A")}`}
                           </Typography>
                           <Box sx={{ position: "absolute", top: 4, right: 4 }}>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleEdit(idx)}
-                              sx={{ color: "#fff" }}
-                            >
+                            <IconButton size="small" onClick={() => handleEdit(idx)} sx={{ color: "#fff" }}>
                               <Edit fontSize="small" />
                             </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDelete(event._id)}
-                              sx={{ color: "#fff" }}
-                            >
+                            <IconButton size="small" onClick={() => handleDelete(event._id)} sx={{ color: "#fff" }}>
                               <Delete fontSize="small" />
                             </IconButton>
                           </Box>
@@ -639,10 +574,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
 
                 {/* Calendar Section */}
                 {/* <EmployeeList employees={employees} /> */}
-                <EmployeeList
-                  employees={employees}
-                  moveEmployee={moveEmployee}
-                />
+                <EmployeeList employees={employees} moveEmployee={moveEmployee} />
 
                 {/* <DragDropContext onDragEnd={onEmployeeDrop}> */}
                 {/* <Droppable droppableId="calendar">
@@ -667,11 +599,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                   defaultView={Views.MONTH}
                   components={{
                     event: (props) => (
-                      <EventComponent
-                        {...props}
-                        employees={employees}
-                        onEmployeeAssign={handleEmployeeAssign}
-                      />
+                      <EventComponent {...props} employees={employees} onEmployeeAssign={handleEmployeeAssign} />
                     ),
                   }}
                 />
@@ -682,15 +610,8 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                 {/* </DragDropContext> */}
 
                 {/* Event Dialog */}
-                <Dialog
-                  open={openDialog}
-                  onClose={handleDialogClose}
-                  fullWidth
-                  maxWidth="sm"
-                >
-                  <DialogTitle>
-                    {editingIndex !== null ? "Edit Event" : "Create New Event"}
-                  </DialogTitle>
+                <Dialog open={openDialog} onClose={handleDialogClose} fullWidth maxWidth="sm">
+                  <DialogTitle>{editingIndex !== null ? "Edit Event" : "Create New Event"}</DialogTitle>
                   <DialogContent>
                     <Box sx={{ mt: 2 }}>
                       <TextField
@@ -699,9 +620,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                         sx={{ mt: 2, mb: 1 }}
                         variant="outlined"
                         value={newEvent.title}
-                        onChange={(e) =>
-                          setNewEvent({ ...newEvent, title: e.target.value })
-                        }
+                        onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
                       />
                       <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
                         <TextField
@@ -711,9 +630,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                           sx={{ mt: 2, mb: 1 }}
                           variant="outlined"
                           InputLabelProps={{ shrink: true }}
-                          value={moment(newEvent.start).format(
-                            "YYYY-MM-DDTHH:mm"
-                          )}
+                          value={moment(newEvent.start).format("YYYY-MM-DDTHH:mm")}
                           onChange={(e) =>
                             setNewEvent({
                               ...newEvent,
@@ -728,9 +645,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                           sx={{ mt: 2, mb: 1 }}
                           variant="outlined"
                           InputLabelProps={{ shrink: true }}
-                          value={moment(newEvent.end).format(
-                            "YYYY-MM-DDTHH:mm"
-                          )}
+                          value={moment(newEvent.end).format("YYYY-MM-DDTHH:mm")}
                           onChange={(e) =>
                             setNewEvent({
                               ...newEvent,
@@ -747,9 +662,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                           {colorOptions.map((color) => (
                             <Box
                               key={color}
-                              onClick={() =>
-                                setNewEvent({ ...newEvent, color })
-                              }
+                              onClick={() => setNewEvent({ ...newEvent, color })}
                               sx={{
                                 width: 32,
                                 height: 32,
@@ -758,11 +671,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                                 cursor: "pointer",
                                 border:
                                   newEvent.color === color
-                                    ? `3px solid ${
-                                        theme.palette.mode === "dark"
-                                          ? "#fff"
-                                          : "#000"
-                                      }`
+                                    ? `3px solid ${theme.palette.mode === "dark" ? "#fff" : "#000"}`
                                     : "none",
                                 "&:hover": {
                                   transform: "scale(1.1)",
@@ -776,11 +685,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                   </DialogContent>
                   <DialogActions>
                     <Button onClick={handleDialogClose}>Cancel</Button>
-                    <Button
-                      variant="contained"
-                      onClick={handleSaveEvent}
-                      disabled={!newEvent.title}
-                    >
+                    <Button variant="contained" onClick={handleSaveEvent} disabled={!newEvent.title}>
                       {editingIndex !== null ? "Save Changes" : "Create Event"}
                     </Button>
                   </DialogActions>
@@ -814,12 +719,7 @@ const handleEmployeeAssign = async (employeeId: string, eventId: string) => {
                     Created with React, Material-UI, and React Big Calendar
                   </Typography>
                   <Box sx={{ display: "flex", gap: 1 }}>
-                    <IconButton
-                      size="small"
-                      href="https://github.com/yourusername"
-                      target="_blank"
-                      rel="noopener"
-                    >
+                    <IconButton size="small" href="https://github.com/yourusername" target="_blank" rel="noopener">
                       <GitHub fontSize="small" />
                     </IconButton>
                   </Box>
